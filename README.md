@@ -92,6 +92,30 @@ Timezone calculation is done with timezone informations supported by PHP, not wi
         $recurrence->format = 'Ymd\THis';
         $recurrence->skip_not_in_range = TRUE;
 
+        //multiple separate rdate and exdate rules
+
+        $options['dtstart'] = '20121125T140000';
+        $options['duration'] = 'PT1H';
+        $options['tzid'] = 'Europe/Berlin';
+        $options['rrule'] = 'FREQ=YEARLY;BYMONTH=1,3,5,7,9,11;BYDAY=-1SU;COUNT=10';
+        $options['rdate'][] = '20130127T140000';
+        $options['rdate'][] = '20130224T140000';
+        $options['exdate'][] = '20130929T140000';
+        $options['exdate'][] = '20130728T140000';
+
+        //error handling
+
+        $options = array(
+            'dtstart'  => '20120131T150000',
+            'rrule'    => 'FREQ=MONTHLY;BYWEEKNO=1,2,3'  //invalid RRULE
+          );
+
+        require_once('./recurrence.php');
+        $recurrence = new recurrence($options);
+        if($recurrence->error){
+          //error routine here
+          }
+
     ?>
 
 ## Some crazy rules
