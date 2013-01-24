@@ -114,27 +114,33 @@
              $this->error = TRUE;
          break;
          case "rdate":                                                             //RDATE
-           $rdate = explode(",",$value);
-           foreach($rdate as $property){
-             list($date, $period) = explode("/",$property);
-             if(FALSE === ($start = $this->strtotime($date)))                      //create timestamp
-             $this->error = TRUE;
-             if($period){
-               try { $duration = new DateInterval($period); }                      //evaluate 2nd part as duration
-               catch(Exception $e){
-                 $duration = NULL;
-                 if(FALSE === ($end = $this->strtotime($period)))                  //evaluate 2nd part as datestring
-                 $this->error = TRUE;
+           if(!is_array($value)) $value = array($value);
+           foreach($value as $entry){
+             $rdate = explode(",",$entry);
+             foreach($rdate as $property){
+               list($date, $period) = explode("/",$property);
+               if(FALSE === ($start = $this->strtotime($date)))                      //create timestamp
+               $this->error = TRUE;
+               if($period){
+                 try { $duration = new DateInterval($period); }                      //evaluate 2nd part as duration
+                 catch(Exception $e){
+                   $duration = NULL;
+                   if(FALSE === ($end = $this->strtotime($period)))                  //evaluate 2nd part as datestring
+                   $this->error = TRUE;
+                   }
                  }
+               $this->rdate[] = compact('start','end','duration');
                }
-             $this->rdate[] = compact('start','end','duration');
              }
          break;
          case "exdate":                                                            //EXDATE
-           $exdate = explode(",",$value);
-           foreach($exdate as $datestring){
-             if(FALSE === ($this->exdate[] = $this->strtotime($datestring)))         //create timestamps
-             $this->error = TRUE;
+           if(!is_array($value)) $value = array($value);
+           foreach($value as $entry){
+             $exdate = explode(",",$entry);
+             foreach($exdate as $datestring){
+               if(FALSE === ($this->exdate[] = $this->strtotime($datestring)))         //create timestamps
+               $this->error = TRUE;
+               }
              }
          break;
          case "duration":                                                          //DURATION
@@ -411,6 +417,8 @@
 
      elseif($duration_time)
        $output['dtend'] = $this->date($this->format,$start+$duration_time);
+
+     $output['recurrence-id'] = gmdate("Ymd\THis\Z",$start);
 
      if(!$this->skip_not_in_range AND $this->current_count > 0)
        $output['x-recurrence'] = $this->current_count;
