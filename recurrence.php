@@ -54,7 +54,7 @@
    protected $limitations     = array();               //all limitations
    protected $expansion_count = 0;                     //number of expansions set by rule
 
-   protected $error           = FALSE;                 //TRUE if error in properties found
+   public    $error           = FALSE;                 //TRUE if error in properties found
    protected $timezone;                                //DateTimeZone object
    protected $datetime;                                //DateTime object
    protected $duration_time;                           //Duration in seconds
@@ -175,9 +175,10 @@
            $this->error = TRUE;
          break;
          case "byyearday":                                                         //BYYEARDAY
-           $this->byyearday = explode(",",$value);
-           foreach($this->byyearday as $day)
-           if(!is_numeric($day) OR abs($day) < 1 OR abs($day) > 366)
+         case "bysetpos":                                                          //BYSETPOS
+           $this->$option = explode(",",$value);
+           foreach($this->$option as $value)
+           if(!is_numeric($value) OR abs($value) < 1 OR abs($value) > 366)
            $this->error = TRUE;
          break;
          case "bymonthday":                                                        //BYMONTHDAY
@@ -207,12 +208,6 @@
            $this->$option = explode(",",$value);
            foreach($this->$option as $value)
            if(!is_numeric($value) OR $value < 0 OR $value > 59)
-           $this->error = TRUE;
-         break;
-         case "bysetpos":                                                          //BYSETPOS
-           $this->bysetpos = explode(",",$value);
-           foreach($this->bysetpos as $setpos)
-           if(!is_numeric($setpos) OR abs($setpos) < 1 OR abs($setpos) > 366)
            $this->error = TRUE;
          break;
          }
@@ -288,7 +283,6 @@
      }
 
    protected function property_check(){
-
      switch(TRUE){
        case(NULL === $this->dtstart):
        case(NULL !== $this->dtend AND $this->duration):
@@ -391,7 +385,7 @@
        if($start == $this->cached_dates[0]) array_shift($this->cached_dates);      //remove duplicate entry
        }
 
-     elseif($start = array_shift($this->cached_dates)){                          //output CACHED DATE
+     elseif(NULL !== ($start = array_shift($this->cached_dates))){               //output CACHED DATE
        $duration =& $this->duration;
        $duration_time =& $this->duration_time;
        }
@@ -412,7 +406,7 @@
        $output['dtend'] = $this->datetime->format($this->format);
        }
 
-     elseif($end)
+     elseif(NULL !== $end)
        $output['dtend'] = $this->date($this->format,$end);
 
      elseif($duration_time)
