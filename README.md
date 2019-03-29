@@ -14,9 +14,6 @@ So, here it is.
 
     <?php
 
-        use \hmuenzer\Recurrence;
-        require_once('./src/Recurrence.php');
-
         $options = array(
           'dtstart' => '19970902T090000',
           'dtend'   => '19970902T100000',
@@ -24,6 +21,7 @@ So, here it is.
           'rrule'   => 'FREQ=WEEKLY;UNTIL=19971007T000000Z;WKST=SU;BYDAY=TU,TH'
           );
 
+        require_once('./Recurrence.php');
         $recurrence = new Recurrence($options);
         $recurrence->format = 'Ymd\THisO';
 
@@ -88,6 +86,8 @@ Timezone calculation is done with timezone informations supported by PHP, not wi
             'before'   => '20130101T000000Z'
           );
 
+        require_once('./Recurrence.php');
+
         $recurrence = new Recurrence($options);
         $recurrence->format = 'Ymd\THis';
         $recurrence->skipNotInRange = TRUE;
@@ -110,6 +110,7 @@ Timezone calculation is done with timezone informations supported by PHP, not wi
             'rrule'    => 'FREQ=MONTHLY;BYWEEKNO=1,2,3'  //invalid RRULE
           );
 
+        require_once('./Recurrence.php');
         $recurrence = new Recurrence($options);
         if($recurrence->error){
           //error routine here
