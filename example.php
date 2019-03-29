@@ -7,8 +7,8 @@
           'rrule'   => 'FREQ=WEEKLY;UNTIL=19971007T000000Z;WKST=SU;BYDAY=TU,TH'
           );
 
-        require_once('./recurrence.php');
-        $recurrence = new recurrence($options);
+        require_once('./Recurrence.php');
+        $recurrence = new Recurrence($options);
         $recurrence->format = 'Ymd\THisO';
 
         while($date = $recurrence->next()){

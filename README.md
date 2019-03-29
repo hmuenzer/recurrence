@@ -21,8 +21,8 @@ So, here it is.
           'rrule'   => 'FREQ=WEEKLY;UNTIL=19971007T000000Z;WKST=SU;BYDAY=TU,TH'
           );
 
-        require_once('./recurrence.php');
-        $recurrence = new recurrence($options);
+        require_once('./Recurrence.php');
+        $recurrence = new Recurrence($options);
         $recurrence->format = 'Ymd\THisO';
 
         while($date = $recurrence->next()){
@@ -86,11 +86,11 @@ Timezone calculation is done with timezone informations supported by PHP, not wi
             'before'   => '20130101T000000Z'
           );
 
-        require_once('./recurrence.php');
+        require_once('./Recurrence.php');
 
-        $recurrence = new recurrence($options);
+        $recurrence = new Recurrence($options);
         $recurrence->format = 'Ymd\THis';
-        $recurrence->skip_not_in_range = TRUE;
+        $recurrence->skipNotInRange = TRUE;
 
         //multiple separate rdate and exdate rules
 
@@ -110,8 +110,8 @@ Timezone calculation is done with timezone informations supported by PHP, not wi
             'rrule'    => 'FREQ=MONTHLY;BYWEEKNO=1,2,3'  //invalid RRULE
           );
 
-        require_once('./recurrence.php');
-        $recurrence = new recurrence($options);
+        require_once('./Recurrence.php');
+        $recurrence = new Recurrence($options);
         if($recurrence->error){
           //error routine here
           }

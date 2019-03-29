@@ -22,7 +22,8 @@
     }
 **/
 
- class recurrence {
+ class Recurrence {
+
    protected $dtstart;                                 //VEVENT parameters
    protected $dtend;
    protected $rdate           = array();
@@ -66,16 +67,16 @@
    protected $cached_details  = array();               //cached year, month and week details
 
    public    $format          = "Y-m-d H:i:s";         //output format
-   public    $skip_not_in_range = FALSE;               //skip expanding of dates not in range to save time
+   public    $skipNotInRange = FALSE;               //skip expanding of dates not in range to save time
 
 
    public function __construct($options){
-     if(!$this->read_options($options)) return;
-     $this->evaluate_options();
-     $this->property_check();
+     if(!$this->readOptions($options)) return;
+     $this->evaluateOptions();
+     $this->checkProperties();
      }
 
-   protected function read_options($options = array()){
+   protected function readOptions($options = array()){
 
      if(!$options){                                                                //no options - abort
        $this->error = TRUE;
@@ -216,11 +217,11 @@
      return TRUE;
      }
 
-   protected function evaluate_options(){
+   protected function evaluateOptions(){
      if(NULL !== $this->until AND (NULL === $this->before OR $this->before > $this->until))      //synchronize until / before
        $this->before = $this->until;
      if(NULL !== $this->count OR NULL === $this->after)                                          //disable skipping
-       $this->skip_not_in_range = FALSE;
+       $this->skipNotInRange = FALSE;
      if(NULL !== $this->dtend){
        //calculate a nominal duration for anniversary or allday events instead of a exact duration
        //the value type of dtstart is not recognized by this script, so events starting and ending midnight are handeled as allday
@@ -282,7 +283,7 @@
      $this->wkst_seq[] = array_shift($this->wkst_seq);
      }
 
-   protected function property_check(){
+   protected function checkProperties(){
      switch(TRUE){
        case(NULL === $this->dtstart):
        case(NULL !== $this->dtend AND $this->duration):
@@ -310,9 +311,9 @@
        $this->iteration++;
        if(++$safety_brake > 1000) break;                                              //fail safe: abort after 1000 failed iterations
 
-       if(1 < $this->iteration) $this->next_interval();                               //apply interval from 2nd iteration on (dtstart is first date to be expanded)
-       if($this->out_of_range()) return FALSE;                                        //current date out of range: abort
-       if($this->skip_not_in_range AND $this->not_in_range()) continue;               //current date not in range: next interval
+       if(1 < $this->iteration) $this->nextInterval();                               //apply interval from 2nd iteration on (dtstart is first date to be expanded)
+       if($this->outOfRange()) return FALSE;                                        //current date out of range: abort
+       if($this->skip_notInRange AND $this->notInRange()) continue;               //current date not in range: next interval
 
        $dates = array($this->current_date);                                           //start expanding with current date
 
@@ -330,7 +331,7 @@
              foreach($expansion_set as $expansion)                                      //compute dates for each expansion in set
              if($this->$expansion) $result_dates[] = $this->{'expand_'.$expansion}($date);
              if(!$result_dates) continue 2;                                             //no expansions done: continue with next set
-             $this->merge_set(& $expanded_dates,$result_dates);                         //merge result
+             $this->mergeSet($expanded_dates,$result_dates);                           //merge result
              }
            if(!$dates = $expanded_dates) continue 2;                                    //no result: next interval
            }
@@ -342,7 +343,7 @@
            if($this->$limitation AND FALSE == $this->{'limit_'.$limitation}($date)) continue 2;  //restricted by rule: continue with next date
            $limited_dates[] = $date;
            }
-         if($this->bysetpos) $this->limit_bysetpos(& $limited_dates);                   //apply bysetpos
+         if($this->bysetpos) $this->limit_bysetpos($limited_dates);                     //apply bysetpos
          if($this->exdate) $limited_dates = array_diff($limited_dates,$this->exdate);   //apply exdate
          if(!$dates = $limited_dates) continue;                                         //no result: next interval
 
@@ -378,7 +379,8 @@
             (!$this->cached_dates OR
             current($this->cached_rdates) <= $this->cached_dates[0])){
 
-       list($key, $start) = each($this->cached_rdates);
+       $key = key($this->cached_rdates);
+       $start = current($this->cached_rdates);
        $end =& $this->rdate[$key]['end'];
        $duration =& $this->rdate[$key]['duration'];
        $duration_time =& $this->duration_time;
@@ -414,7 +416,7 @@
 
      $output['recurrence-id'] = gmdate("Ymd\THis\Z",$start);
 
-     if(!$this->skip_not_in_range AND $this->current_count > 0)
+     if(!$this->skipNotInRange AND $this->current_count > 0)
        $output['x-recurrence'] = $this->current_count;
 
      if(isset($key)) unset($this->cached_rdates[$key]);                          //remove used rdate from cache
@@ -422,7 +424,7 @@
      return $output;
      }
 
-   protected function next_interval(){
+   protected function nextInterval(){
      list($Y,$m,$d,$H,$i,$s) = $this->explode("Y-m-d-H-i-s",$this->current_date);
      switch($this->freq){
        case "YEARLY":   $this->current_date = $this->mktime($H,$i,$s,$m,$d,$Y+$this->interval);   break;
@@ -446,25 +448,25 @@
        }
      }
 
-   protected function out_of_range(){
+   protected function outOfRange(){
      if(NULL === $this->before) return FALSE;
      if(!$this->expansion_count AND $this->current_date > $this->before) return TRUE;             //no expansions: check current date only
 
      switch($this->freq){                                                                         //check range of possible expansions
        case "YEARLY":
-         $year_details = $this->year_details($this->date("Y",$this->current_date));
+         $year_details = $this->getYearDetails($this->date("Y",$this->current_date));
          if($this->byweekno AND $year_details['week_start'] < $year_details['start']) $start = $year_details['week_start'];
          else $start = $year_details['start'];
          if($start > $this->before) return TRUE;
        break;
        case "MONTHLY":
          list($Y,$m) = $this->explode("Y-m",$this->current_date);
-         $month_details = $this->month_details($m,$Y);
+         $month_details = $this->getMonthDetails($m,$Y);
          if($month_details['start'] > $this->before) return TRUE;
        break;
        case "WEEKLY":
          list($Y,$z) = $this->explode("Y-z",$this->current_date);
-         $week_details = $this->week_details($z,$Y);
+         $week_details = $this->getWeekDetails($z,$Y);
          if($week_details['start'] > $this->before) return TRUE;
        break;
        case "DAILY":
@@ -489,25 +491,25 @@
      return FALSE;
      }
 
-   protected function not_in_range(){
+   protected function notInRange(){
      if(NULL === $this->after) return FALSE;
      if(!$this->expansion_count AND $this->current_date < $this->after) return TRUE;           //no expansions: check current date only
 
      switch($this->freq){                                                                      //check range of possible expansions
        case "YEARLY":
-         $year_details = $this->year_details($this->date("Y",$this->current_date));
+         $year_details = $this->getYearDetails($this->date("Y",$this->current_date));
          if($this->byweekno AND $year_details['week_end'] > $year_details['end']) $end = $year_details['week_end'];
          else $end = $year_details['end'];
          if($end < $this->after) return TRUE;
        break;
        case "MONTHLY":
          list($Y,$m) = $this->explode("Y-m",$this->current_date);
-         $month_details = $this->month_details($m,$Y);
+         $month_details = $this->getMonthDetails($m,$Y);
          if($month_details['end'] < $this->after) return TRUE;
        break;
        case "WEEKLY":
          list($Y,$z) = $this->explode("Y-z",$this->current_date);
-         $week_details = $this->week_details($z,$Y);
+         $week_details = $this->getWeekDetails($z,$Y);
          if($week_details['end'] < $this->after) return TRUE;
        break;
        case "DAILY":
@@ -532,7 +534,7 @@
      return FALSE;
      }
 
-   protected function merge_set($expanded_dates,$set){
+   protected function mergeSet(& $expanded_dates,$set){
      if(!$set){ $expanded_dates = array(); return; }
      $merge = $set[0];
      for($i = 1; $i < count($set); $i++)
@@ -560,7 +562,7 @@
      $dates = array();
      list($Y,$m,$H,$i,$s) = $this->explode("Y-m-H-i-s",$date);
 
-     $year[$Y] = $this->year_details($Y);                                            //results are limited to current year
+     $year[$Y] = $this->getYearDetails($Y);                                            //results are limited to current year
      $start = $year[$Y]['start'];
      $end = $year[$Y]['end'];
 
@@ -570,9 +572,9 @@
        }
 
      if($year[$Y]['week_end'] < $end)                                                //check results from overlapping years too
-       $year[$Y+1] = $this->year_details($Y+1);
+       $year[$Y+1] = $this->getYearDetails($Y+1);
      elseif($year[$Y]['week_start'] > $start)
-       $year[$Y-1] = $this->year_details($Y-1);
+       $year[$Y-1] = $this->getYearDetails($Y-1);
 
      if(!$this->byyearday AND !$this->bymonthday AND !$this->byday){                 //day part NOT defined by rule: take weekday from dtstart
        $days = array('SU','MO','TU','WE','TH','FR','SA');
@@ -615,13 +617,13 @@
      $end = $this->mktime(23,59,59,12,31,$Y);
 
      if($this->bymonth){                                                                     //previous applied BYMONTH limits the result
-       $month_details = $this->month_details($m,$Y);
+       $month_details = $this->getMonthDetails($m,$Y);
        $start = $month_details['start'];
        $end = $month_details['end'];
        }
 
      if($this->byweekno){                                                                    //previous applied BYWEEKNO limits the result
-       $week_details = $this->week_details($z,$Y);
+       $week_details = $this->getWeekDetails($z,$Y);
        if($start < $week_details['start']) $start = $week_details['start'];
        if($end > $week_details['end']) $end = $week_details['end'];
        }
@@ -641,7 +643,7 @@
    protected function expand_bymonthday($date){
      $dates = array();
      list($Y,$m,$z,$H,$i,$s) = $this->explode("Y-m-z-H-i-s",$date);
-     $month[$m] = $this->month_details($m,$Y);
+     $month[$m] = $this->getMonthDetails($m,$Y);
 
      $start = $this->mktime(0,0,0,1,1,$Y);                                                   //results are limited to current year
      $end = $this->mktime(23,59,59,12,31,$Y);
@@ -652,14 +654,14 @@
        }
 
      if($this->byweekno){                                                                    //previous applied BYWEEKNO limits the result
-       $week_details = $this->week_details($z,$Y);
+       $week_details = $this->getWeekDetails($z,$Y);
        if($start < $week_details['start']) $start = $week_details['start'];
        if($end > $week_details['end']) $end = $week_details['end'];
        if(!$this->bymonth){                                                                    //if no BYMONTH specified, consider overlapping months too
          if($month[$m]['end'] < $end)
-           $month[$m+1] = $this->month_details($m+1,$Y);
+           $month[$m+1] = $this->getMonthDetails($m+1,$Y);
          elseif($month[$m]['start'] > $start)
-           $month[$m-1] = $this->month_details($m-1,$Y);
+           $month[$m-1] = $this->getMonthDetails($m-1,$Y);
          }
        }
 
@@ -683,11 +685,11 @@
      if("WEEKLY" == $this->freq OR $this->byweekno){                                         //special expand for WEEKLY
        list($Y,$m,$z,$H,$i,$s) = $this->explode("Y-m-z-H-i-s",$date);
        if($this->bymonth){                                                                     //previous applied BYMONTH limits the result
-         $month_details = $this->month_details($m,$Y);
+         $month_details = $this->getMonthDetails($m,$Y);
          $start = $month_details['start'];
          $end = $month_details['end'];
          }
-       $week_details = $this->week_details($z,$Y);
+       $week_details = $this->getWeekDetails($z,$Y);
        list($Y,$m,$d) = $this->explode("Y-m-d",$week_details['start']);
        foreach($this->byday as $option){                                                       //apply BYDAY
          if($option['pos']) continue;                                                            //position & WEEKLY is invalid: skip day
@@ -702,7 +704,7 @@
        }
      if("MONTHLY" == $this->freq OR $this->bymonth){                                         //special expand for MONTHLY
        list($Y,$m,$H,$i,$s) = $this->explode("Y-m-H-i-s",$date);
-       $month_details = $this->month_details($m,$Y);
+       $month_details = $this->getMonthDetails($m,$Y);
        foreach($this->byday as $option){                                                       //apply BYDAY
          $pos = array_search($option['weekday'],$month_details['start_seq']);                  //position of day from month start
          $all_days = array();
@@ -724,7 +726,7 @@
        }
      if("YEARLY" == $this->freq){                                                            //special expand for YEARLY
        list($Y,$H,$i,$s) = $this->explode("Y-H-i-s",$date);
-       $year_details = $this->year_details($Y);
+       $year_details = $this->getYearDetails($Y);
        foreach($this->byday as $option){                                                       //apply BYDAY
          $pos = array_search($option['weekday'],$year_details['start_seq']);                   //position of day from year start
          $all_days = array();
@@ -820,7 +822,7 @@
      return FALSE;
      }
 
-   protected function limit_bysetpos($limited_dates){
+   protected function limit_bysetpos(& $limited_dates){
      $num = count($limited_dates);
      foreach($this->bysetpos as $pos){
        if($pos < 0) $pos = $num + $pos +1;
@@ -829,17 +831,17 @@
      $limited_dates = $result;
      }
 
-   protected function week_details($day,$year){
+   protected function getWeekDetails($day,$year){
      if($this->cached_details['week'][$year][$day])                                           //return cached values
        return $this->cached_details['week'][$year][$day];
-     $year_details = $this->year_details($year);
+     $year_details = $this->getYearDetails($year);
      $week_diff = floor(($day - $year_details['week_offset'])/7);                             //difference to 1st week in year
      $start = $this->mktime(0,0,0,1,1 + $year_details['week_offset'] + $week_diff*7,$year);
      $end = $this->mktime(23,59,59,1,1 + $year_details['week_offset'] + $week_diff*7 + 6,$year);
      return $this->cached_details['week'][$year][$day] = compact(array('start','end'));
      }
 
-   protected function month_details($month,$year){
+   protected function getMonthDetails($month,$year){
      if($this->cached_details['month'][$year][$month])                                        //return cached values
        return $this->cached_details['month'][$year][$month];
      $start = $this->mktime(0,0,0,$month,1,$year);
@@ -852,7 +854,7 @@
      return $this->cached_details['month'][$year][$month] = compact(array('start','end','start_seq','number_of_days'));
      }
 
-   protected function year_details($year){
+   protected function getYearDetails($year){
      if($this->cached_details['year'][$year])                                              //return cached values
        return $this->cached_details['year'][$year];
      $start = $this->mktime(0,0,0,1,1,$year);
