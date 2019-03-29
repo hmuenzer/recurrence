@@ -1,6 +1,6 @@
 <?php
 /**
-* PHP5 recurrence calculation / iCalendar RRULE format (RFC 5545)
+* PHP7 recurrence calculation / iCalendar RRULE format (RFC 5545)
 * Author: Holger Münzer <holger.muenzer@gmail.com>
 * Location: http://github.com/hmuenzer/recurrence
 * Requirements: PHP 5.3
@@ -8,19 +8,22 @@
 * Licensed under The MIT License
 *
 * Example usage:
+  use \hmuenzer\Recurrence;
+  require_once('./src/Recurrence.php');
   $options = array(
     'dtstart' => '19970902T090000',
     'dtend'   => '19970902T100000',
     'tzid'    => 'America/New_York',
     'rrule'   => 'FREQ=WEEKLY;UNTIL=19971007T000000Z;WKST=SU;BYDAY=TU,TH'
     );
-  require_once('./recurrence.php');
-  $recurrence = new recurrence($options);
+  $recurrence = new Recurrence($options);
   while($date = $recurrence->next()){
     print_r($date);
     if($z++ > 100) break;
     }
 **/
+
+ namespace hmuenzer;
 
  class Recurrence {
 
@@ -88,10 +91,10 @@
      $options = $options_lower;
 
      try {
-       if($options['tzid']) $this->timezone = new DateTimeZone($options['tzid']);  //set timezone
-       else $this->timezone = new DateTimeZone(date_default_timezone_get());
+       if($options['tzid']) $this->timezone = new \DateTimeZone($options['tzid']);  //set timezone
+       else $this->timezone = new \DateTimeZone(date_default_timezone_get());
        }
-     catch(Exception $e){
+     catch(\Exception $e){
        $this->error = TRUE;
        return FALSE;
        }
@@ -123,8 +126,8 @@
                if(FALSE === ($start = $this->strtotime($date)))                      //create timestamp
                $this->error = TRUE;
                if($period){
-                 try { $duration = new DateInterval($period); }                      //evaluate 2nd part as duration
-                 catch(Exception $e){
+                 try { $duration = new \DateInterval($period); }                      //evaluate 2nd part as duration
+                 catch(\Exception $e){
                    $duration = NULL;
                    if(FALSE === ($end = $this->strtotime($period)))                  //evaluate 2nd part as datestring
                    $this->error = TRUE;
@@ -145,8 +148,8 @@
              }
          break;
          case "duration":                                                          //DURATION
-           try { $this->duration = new DateInterval($value); }
-           catch(Exception $e){ $this->error = FALSE; }
+           try { $this->duration = new \DateInterval($value); }
+           catch(\Exception $e){ $this->error = FALSE; }
          break;
          case "freq":                                                              //FREQUENCY
            $valid = array("SECONDLY","MINUTELY","HOURLY","DAILY","WEEKLY","MONTHLY","YEARLY");
@@ -227,7 +230,7 @@
        //the value type of dtstart is not recognized by this script, so events starting and ending midnight are handeled as allday
        if(array("00","00","00") == $this->explode("H-i-s",$this->dtstart) AND array("00","00","00") == $this->explode("H-i-s",$this->dtend)){
          $number_of_days = round(($this->dtend - $this->dtstart)/86400);
-         $this->duration = new DateInterval("P".$number_of_days."D");
+         $this->duration = new \DateInterval("P".$number_of_days."D");
          $this->dtend = NULL;
          }
        else $this->duration_time = $this->dtend - $this->dtstart;
@@ -307,13 +310,14 @@
        return FALSE;                                                                  //abort
        }
 
+     $safety_brake = 0;
      do {
        $this->iteration++;
        if(++$safety_brake > 1000) break;                                              //fail safe: abort after 1000 failed iterations
 
        if(1 < $this->iteration) $this->nextInterval();                               //apply interval from 2nd iteration on (dtstart is first date to be expanded)
        if($this->outOfRange()) return FALSE;                                        //current date out of range: abort
-       if($this->skip_notInRange AND $this->notInRange()) continue;               //current date not in range: next interval
+       if($this->skipNotInRange AND $this->notInRange()) continue;               //current date not in range: next interval
 
        $dates = array($this->current_date);                                           //start expanding with current date
 
@@ -402,7 +406,7 @@
      $output['dtstart'] = $this->date($this->format,$start);                     //create output
 
      if($duration){
-       $this->datetime = new DateTime("@".$start);
+       $this->datetime = new \DateTime("@".$start);
        $this->datetime->setTimezone($this->timezone);
        $this->datetime->add($duration);
        $output['dtend'] = $this->datetime->format($this->format);
@@ -879,32 +883,32 @@
      }
 
    protected function mktime($hour, $min, $sec, $mon, $day, $year){
-     if(!$this->datetime instanceof DateTime)
-       $this->datetime = new DateTime(NULL, $this->timezone);
+     if(!$this->datetime instanceof \DateTime)
+       $this->datetime = new \DateTime(NULL, $this->timezone);
      try {
        $this->datetime->setDate($year, $mon, $day);
        $this->datetime->setTime($hour, $min, $sec);
        }
-     catch(Exception $e) { return FALSE; }
+     catch(\Exception $e) { return FALSE; }
      return $this->datetime->format("U");
      }
 
    protected function strtotime($time){
-     try { $this->datetime = new DateTime($time, $this->timezone); }
-     catch(Exception $e) { return FALSE; }
+     try { $this->datetime = new \DateTime($time, $this->timezone); }
+     catch(\Exception $e) { return FALSE; }
      return $this->datetime->format("U");
      }
 
    protected function explode($format, $timestamp){
-     try { $this->datetime = new DateTime('@'.$timestamp); }
-     catch(Exception $e) { return FALSE; }
+     try { $this->datetime = new \DateTime('@'.$timestamp); }
+     catch(\Exception $e) { return FALSE; }
      $this->datetime->setTimezone($this->timezone);
      return explode("-",$this->datetime->format($format));
      }
 
    protected function date($format, $timestamp){
-     try { $this->datetime = new DateTime('@'.$timestamp); }
-     catch(Exception $e) { return FALSE; }
+     try { $this->datetime = new \DateTime('@'.$timestamp); }
+     catch(\Exception $e) { return FALSE; }
      $this->datetime->setTimezone($this->timezone);
      return $this->datetime->format($format);
      }

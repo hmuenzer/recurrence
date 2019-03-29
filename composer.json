@@ -1,0 +1,22 @@
+{
+    "name": "hmuenzer/Recurrence",
+    "type": "library",
+    "description": "This tool helps with rrule evaluations",
+    "keywords": ["rrule", "calendar"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Holger Münzer",
+            "email": "holger.muenzer@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "hmuenzer\\": "src/"
+        }
+    },
+    "minimum-stability": "dev"
+}
