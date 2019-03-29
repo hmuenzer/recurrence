@@ -1,8 +1,8 @@
 {
-    "name": "hmuenzer/Recurrence",
+    "name": "hmuenzer/recurrence",
     "type": "library",
-    "description": "This tool helps with rrule evaluations",
-    "keywords": ["rrule", "calendar"],
+    "description": "This tool helps with rrule evaluations as defined by RFC 5545",
+    "keywords": ["rrule", "ical"],
     "license": "MIT",
     "authors": [
         {
